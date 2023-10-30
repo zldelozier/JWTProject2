@@ -4,17 +4,10 @@ const jose = require('node-jose');
 
 let sql; 
 const sqlite3 = require('sqlite3').verbose(); 
-//let db = new sqlite3.Database("./Project1/js/totally_not_my_privateKeys.db"); 
-//connect to db
-db = new sqlite3.Database("./Project1/js/totally_not_my_privateKeys.db", sqlite3.OPEN_READWRITE, (err)=>{
-  if(err && err.code == "SQLITE_CANTOPEN") {
-    db=new sqlite3.Database("./Project1/js/totally_not_my_privateKeys.db", (err)=>{
-      console.log("cannot create database"); 
-    });  
 
-    return; 
-  } 
-}); 
+//create database. 
+let db = new sqlite3.Database("./Project1/js/totally_not_my_privateKeys.db");
+
 
 
 //create a tbl on start
@@ -30,11 +23,7 @@ db.run(sql);
 
 //db.run("DROP TABLE keys"); 
 
-//insert data into tbl 
-sql = `INSERT INTO keys(key, exp) VALUES (?,?)`; 
-db.run(sql, [1,2], (err)=>{
-  if(err) return console.error(err.message); 
-}); 
+
 
 //query 
 /*sql = `SELECT * FROM keys`;
