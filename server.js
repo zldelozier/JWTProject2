@@ -44,7 +44,7 @@ let keyPair;
 let expiredKeyPair;
 let token;
 let expiredToken;
-
+//async generate the key pairs using jose. 
   async function generateKeyPairs() {
     keyPair = await jose.JWK.createKey('RSA', 2048, { alg: 'RS256', use: 'sig' });
     expiredKeyPair = await jose.JWK.createKey('RSA', 2048, { alg: 'RS256', use: 'sig' });
@@ -62,12 +62,15 @@ db.all(sql, [], (err, rows)=>{
 })
 */
 
+//generate non-expired tokens from the information in the database. 
 function generateToken() {
+    //select non-expired keys, kids, and expiration dates. 
   sql = `SELECT * FROM keys WHERE exp > ?`;
   db.all(sql, [Math.floor(Date.now() / 1000)], (err, rows) => {
     if (err) {
       return console.error(err.message);
     }
+      //grab the first result. 
       const returnedKey = rows[0];
      // console.log("row0:", returnedKey); 
      // console.log(returnedKey); 
@@ -81,9 +84,10 @@ function generateToken() {
         header: {
           typ: 'JWT',
           alg: 'RS256',
-          kid: returnedKey.kid
+          kid: returnedKey.kid//use the kid that was grabbed from the database. 
         }
       }
+      //sign the token using the key from the database, payload, and options. 
       token = jwt.sign(payload, returnedKey.key, options);  
 
   });
@@ -91,13 +95,14 @@ function generateToken() {
 
 function generateExpiredJWT() {
   //sql command
+    //get keys, kids where they are expired. 
   sql =  `SELECT * FROM keys WHERE exp > ?`; 
   db.all(sql, [Math.floor(Date.now() / 1000) - 30000], (err,rows)=>
   {
     if (err) {
       return console.error(err.message);
     }
-
+//grab the first row 
     const returnedExpiredKey = rows[0]; 
   //console.log(rows[0]); 
     const payload = {
@@ -110,15 +115,16 @@ function generateExpiredJWT() {
       header: {
         typ: 'JWT',
         alg: 'RS256',
-        kid: returnedExpiredKey.kid
+        kid: returnedExpiredKey.kid//use the kid from the database. 
       }
     };
-  
+  //sign the expired token with the key returned from the database, options, and payloads. 
     expiredToken = jwt.sign(payload, returnedExpiredKey.key, options);
   }); 
   
 }
 
+//refuse unacceptable requests. 
 app.all('/auth', (req, res, next) => {
   //reads priv key from db. 
 
@@ -128,9 +134,8 @@ app.all('/auth', (req, res, next) => {
   next();
 });
 
-// Middleware to ensure only GET requests are allowed for /jwks
-app.all('/.well-known/jwks.json', (req, res, next) => {
-  if (req.method !== 'GET') {
+//only get requests 
+app.all('/.well-known/jwks.json', (req, res, next) => {  if (req.method !== 'GET') {
     return res.status(405).send('Method Not Allowed');
   }
   next();
